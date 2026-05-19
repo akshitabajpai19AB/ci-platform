@@ -48,7 +48,7 @@ jobs:
       - run: |
           pip install flake8 pytest checkov
           flake8 . || true
-          pytest || true
+          pytest -s
           checkov -d . || true
         if: hashFiles('**/*.py') != ''
 
