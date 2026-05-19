@@ -13,7 +13,9 @@ on:
         default: "main"
 
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - feature/*
 
   pull_request:
 
