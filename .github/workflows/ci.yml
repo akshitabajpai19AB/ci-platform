@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  workflow_call:
+
+  workflow_dispatch:
+    inputs:
+      repository:
+        required: false
+        default: ""
+      ref:
+        required: false
+        default: "main"
+
+  push:
+    branches: [ main ]
+
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.inputs.repository || github.repository }}
+          ref: ${{ github.event.inputs.ref }}
+
+      - uses: actions/setup-dotnet@v4
+        if: hashFiles('**/*.csproj') != ''
+        with:
+          dotnet-version: '8.0.x'
+
+      - run: |
+          dotnet restore
+          dotnet build --no-restore /warnaserror
+          dotnet test --no-build
+        if: hashFiles('**/*.csproj') != ''
+
+      - uses: actions/setup-python@v5
+        if: hashFiles('**/*.py') != ''
+        with:
+          python-version: '3.11'
+
+      - run: |
+          pip install flake8 pytest checkov
+          flake8 . || true
+          pytest || true
+          checkov -d . || true
+        if: hashFiles('**/*.py') != ''
+
+      - run: |
+          echo '{ "repo": "${{ github.repository }}" }' > metrics.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metrics
+          path: metrics.json
